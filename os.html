@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Allocation Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 90%;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px gray;
+            margin-bottom: 30px;
+        }
+        .memory-blocks {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .block {
+            width: 80px;
+            height: 60px;
+            border: 2px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            background-color: lightgray;
+        }
+        .allocated { background-color: lightblue; }
+        .info { margin-top: 10px; font-weight: bold; }
+        .strategy-section {
+            margin-bottom: 20px;
+        }
+        .log {
+            background: #222;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: left;
+            height: 150px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <h1>Memory Allocation Simulation</h1>
+
+    <div class="container strategy-section">
+        <h2>First-Fit Allocation</h2>
+        <label>Process Size:</label>
+        <input type="number" id="firstFitSize" value="50">
+        <button onclick="allocateFirstFit()">Allocate</button>
+        <button onclick="deallocateFirstFit()">Deallocate</button>
+        <div class="memory-blocks" id="firstFitMemory"></div>
+        <div class="log" id="firstFitLog"></div>
+    </div>
+
+    <div class="container strategy-section">
+        <h2>Best-Fit Allocation</h2>
+        <label>Process Size:</label>
+        <input type="number" id="bestFitSize" value="50">
+        <button onclick="allocateBestFit()">Allocate</button>
+        <button onclick="deallocateBestFit()">Deallocate</button>
+        <div class="memory-blocks" id="bestFitMemory"></div>
+        <div class="log" id="bestFitLog"></div>
+    </div>
+
+    <div class="container strategy-section">
+        <h2>Worst-Fit Allocation</h2>
+        <label>Process Size:</label>
+        <input type="number" id="worstFitSize" value="50">
+        <button onclick="allocateWorstFit()">Allocate</button>
+        <button onclick="deallocateWorstFit()">Deallocate</button>
+        <div class="memory-blocks" id="worstFitMemory"></div>
+        <div class="log" id="worstFitLog"></div>
+    </div>
+
+
+    <div class="container strategy-section">
+        <h2>Buddy System Allocation</h2>
+        <label>Process Size:</label>
+        <input type="number" id="buddySize" value="50">
+        <button onclick="allocateBuddySystem()">Allocate</button>
+        <button onclick="deallocateBuddySystem()">Deallocate</button>
+        <div class="memory-blocks" id="buddyMemory"></div>
+        <div class="log" id="buddyLog"></div>
+    </div>
+
+
+    <script>
+        let firstFitBlocks = [100, 50, 200, 300];
+        let bestFitBlocks = [...firstFitBlocks];
+        let worstFitBlocks = [...firstFitBlocks];
+
+        function renderMemory(blocks, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            blocks.forEach((size, index) => {
+                const div = document.createElement('div');
+                div.className = 'block';
+                div.innerText = ${size} KB;
+                div.dataset.index = index;
+                container.appendChild(div);
+            });
+        }
+
+        function allocate(blocks, size, logId, containerId, comparator) {
+            let startTime = performance.now();
+            let log = document.getElementById(logId);
+            log.innerHTML = '';
+            let availableBlocks = blocks.map((size, index) => ({ size, index }));
+            availableBlocks.sort(comparator);
+            for (let block of availableBlocks) {
+                if (block.size >= size) {
+                    log.innerHTML += Allocating ${size} KB to block of ${block.size} KB <br>;
+                    blocks[block.index] -= size;
+                    let endTime = performance.now();
+                    log.innerHTML += Allocation completed in ${(endTime - startTime).toFixed(2)} ms<br>;
+                    renderMemory(blocks, containerId);
+                    return;
+                }
+            }
+            log.innerHTML += No suitable block found! Allocation failed.<br>;
+        }
+
+        function deallocate(blocks, originalBlocks, logId, containerId) {
+            let log = document.getElementById(logId);
+            log.innerHTML = 'Memory deallocated!<br>';
+            blocks.forEach((_, i) => blocks[i] = originalBlocks[i]);
+            renderMemory(blocks, containerId);
+        }
+
+        function allocateFirstFit() {
+            allocate(firstFitBlocks, parseInt(document.getElementById('firstFitSize').value), 'firstFitLog', 'firstFitMemory', (a, b) => a.index - b.index);
+        }
+
+        function allocateBestFit() {
+            allocate(bestFitBlocks, parseInt(document.getElementById('bestFitSize').value), 'bestFitLog', 'bestFitMemory', (a, b) => a.size - b.size);
+        }
+
+        function allocateWorstFit() {
+            allocate(worstFitBlocks, parseInt(document.getElementById('worstFitSize').value), 'worstFitLog', 'worstFitMemory', (a, b) => b.size - a.size);
+        }
+
+        function deallocateFirstFit() {
+            deallocate(firstFitBlocks, [100, 50, 200, 300], 'firstFitLog', 'firstFitMemory');
+        }
+
+        function deallocateBestFit() {
+            deallocate(bestFitBlocks, [100, 50, 200, 300], 'bestFitLog', 'bestFitMemory');
+        }
+
+        function deallocateWorstFit() {
+            deallocate(worstFitBlocks, [100, 50, 200, 300], 'worstFitLog', 'worstFitMemory');
+        }
+        let buddyBlocks = [1024];
+        
+        function renderBuddyMemory() {
+            const container = document.getElementById('buddyMemory');
+            container.innerHTML = '';
+            buddyBlocks.forEach(size => {
+                const div = document.createElement('div');
+                div.className = 'block';
+                div.innerText = ${size} KB;
+                container.appendChild(div);
+            });
+        }
+
+        function allocateBuddySystem() {
+            let size = parseInt(document.getElementById('buddySize').value);
+            let log = document.getElementById('buddyLog');
+            log.innerHTML = '';
+            
+            for (let i = 0; i < buddyBlocks.length; i++) {
+                if (buddyBlocks[i] >= size) {
+                    let allocatedSize = Math.pow(2, Math.ceil(Math.log2(size)));
+                    log.innerHTML += Allocating ${size} KB using block of ${allocatedSize} KB<br>;
+                    buddyBlocks[i] -= allocatedSize;
+                    buddyBlocks.push(allocatedSize);
+                    renderBuddyMemory();
+                    return;
+                }
+            }
+            log.innerHTML += No suitable block found! Allocation failed.<br>;
+        }
+
+        function deallocateBuddySystem() {
+            document.getElementById('buddyLog').innerHTML = 'Memory deallocated!<br>';
+            buddyBlocks = [1024];
+            renderBuddyMemory();
+        }
+
+        // window.onload = function () {
+        //     renderBuddyMemory();
+        // };
+        window.onload = function () {
+            renderMemory(firstFitBlocks, 'firstFitMemory');
+            renderMemory(bestFitBlocks, 'bestFitMemory');
+            renderMemory(worstFitBlocks, 'worstFitMemory');
+            renderBuddyMemory();
+        };
+
+        
+    </script>
+</body>
+</html>
